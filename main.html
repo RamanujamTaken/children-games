@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="te">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>జెండర్ – సహచరుల ఒత్తిడి Quiz</title>
+
+<style>
+    body {
+        margin: 0;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, #89f7fe, #66a6ff);
+        text-align: center;
+        min-height: 100vh;
+        padding-bottom: 40px;
+    }
+    
+    h1 {
+        color: white;
+        padding: 20px 10px;
+        margin: 0;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        animation: float 3s infinite ease-in-out;
+    }
+
+    @keyframes float {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-8px); }
+    }
+
+    .progress {
+        width: 90%;
+        max-width: 600px;
+        height: 15px;
+        background: rgba(255, 255, 255, 0.4);
+        border-radius: 20px;
+        margin: 10px auto 20px auto;
+        box-shadow: inset 0 2px 5px rgba(0,0,0,0.1);
+    }
+
+    .progress-bar {
+        height: 100%;
+        width: 0%;
+        background: #4caf50;
+        border-radius: 20px;
+        transition: width 0.4s ease;
+        box-shadow: 0 2px 5px rgba(76, 175, 80, 0.4);
+    }
+
+    .container {
+        max-width: 600px;
+        background: white;
+        margin: 0 auto 20px auto;
+        padding: 20px;
+        border-radius: 15px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+        text-align: left;
+    }
+
+    .question-block {
+        margin-bottom: 25px;
+        padding-bottom: 15px;
+        border-bottom: 1px solid #eee;
+    }
+    
+    .question-block:last-child {
+        border-bottom: none;
+        margin-bottom: 0;
+        padding-bottom: 0;
+    }
+
+    .question {
+        margin: 0 0 15px 0;
+        font-weight: 600;
+        font-size: 1.1em;
+        color: #333;
+    }
+
+    .options button {
+        display: block;
+        width: 100%;
+        margin: 8px 0;
+        padding: 12px;
+        border: 2px solid #e0e0e0;
+        border-radius: 10px;
+        cursor: pointer;
+        background: #fff;
+        font-size: 1em;
+        transition: all 0.2s;
+        text-align: left;
+    }
+
+    .options button:hover:not(:disabled) {
+        border-color: #66a6ff;
+        background: #f0f6ff;
+        transform: translateX(5px);
+    }
+
+    .options button:disabled {
+        cursor: not-allowed;
+        opacity: 0.8;
+    }
+
+    /* Success and Error States */
+    .correct {
+        background: #d4edda !important;
+        border-color: #28a745 !important;
+        color: #155724 !important;
+        font-weight: bold;
+    }
+
+    .wrong {
+        background: #f8d7da !important;
+        border-color: #dc3545 !important;
+        color: #721c24 !important;
+    }
+
+    .submit {
+        background: #ff4081;
+        color: white;
+        padding: 15px 30px;
+        border: none;
+        border-radius: 25px;
+        font-size: 18px;
+        font-weight: bold;
+        margin: 20px auto;
+        cursor: pointer;
+        box-shadow: 0 4px 15px rgba(255, 64, 129, 0.4);
+        transition: 0.3s;
+        display: none; /* Hidden until quiz is finished */
+    }
+
+    .submit:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 6px 20px rgba(255, 64, 129, 0.6);
+    }
+
+    #result {
+        font-size: 28px;
+        color: white;
+        font-weight: bold;
+        margin-top: 20px;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+    }
+
+    canvas {
+        position: fixed;
+        top: 0;
+        left: 0;
+        pointer-events: none;
+        z-index: 1000;
+    }
+</style>
+</head>
+<body>
+
+<h1>🎯 జెండర్ – సహచరుల ఒత్తిడి Quiz 🎉</h1>
+
+<div class="progress">
+    <div class="progress-bar" id="progressBar"></div>
+</div>
+
+<div class="container" id="quizContainer"></div>
+
+<button class="submit" id="submitBtn" onclick="finishQuiz()">Submit Quiz 🎉</button>
+
+<div id="result"></div>
+<canvas id="confetti"></canvas>
+
+<script>
+const questions = [
+    {q:"1. సహచరుల ఒత్తిడి అంటే ఏమిటి?", options:["a) ఉపాధ్యాయుల ఒత్తిడి", "b) స్నేహితుల ప్రభావంతో కలిగే మానసిక ఒత్తిడి", "c) కుటుంబ నియమాలు", "d) పరీక్షల భయం"], answer:1},
+    {q:"2. సబితపై ప్రభావం చూపిన ప్రధాన కారణం ఏమిటి?", options:["a) చదువు ఒత్తిడి","b) ఫ్యాషన్ మరియు స్నేహితుల ప్రభావం", "c) కుటుంబ పరిస్థితి","d) ఉపాధ్యాయులు"], answer:1},
+    {q:"3. ఆయుష్ స్నేహితులు ఏది మనిషితనమని చెప్పారు?", options:["a) బాధ్యతాయుత జీవితం","b) వ్యాయామం", "c) పొగ తాగడం","d) చదువు"], answer:2},
+    {q:"4. పొగతాగడం వల్ల ఇతరులకు కలిగే నష్టాన్ని ఏమంటారు?", options:["a) యాక్టివ్ స్మోకింగ్","b) పాసివ్ స్మోకింగ్", "c) సోషియల్ స్మోకింగ్","d) ఫ్రీ స్మోకింగ్"], answer:1},
+    {q:"5. సహచరుల ఒత్తిడి ఎక్కువగా కనిపించే దశ ఏది?", options:["a) బాల్యం","b) కిశోర దశ", "c) వృద్ధాప్యం","d) శిశు దశ"], answer:1},
+    {q:"6. నిజమైన మనిషితనం ఏదిలో ఉంటుంది?", options:["a) చెడు అలవాట్లలో","b) బాధ్యతాయుత జీవనంలో", "c) ఫ్యాషన్‌లో","d) స్నేహితుల ప్రశంసలో"], answer:1},
+    {q:"7. సోషల్ మీడియా ఒత్తిడి ప్రధానంగా ఏ కారణంగా పెరుగుతుంది?", options:["a) లైకులు మరియు పోలికలు","b) పుస్తకాలు", "c) ఉపాధ్యాయులు","d) క్రీడలు"], answer:0},
+    {q:"8. జెండర్ అపోహలు అంటే ఏమిటి?", options:["a) సమానత్వ భావన","b) హక్కులు", "c) తప్పుదారి పట్టించే నమ్మకాలు","d) చట్టాలు"], answer:2},
+    {q:"9. సహచరుల ఒత్తిడిని జయించడానికి ముఖ్యమైన లక్షణం ఏమిటి?", options:["a) భయం","b) ఆత్మవిశ్వాసం", "c) అనుకరణ","d) దాచిపెట్టడం"], answer:1},
+    {q:"10. సరైన నిర్ణయాలు తీసుకోవడం దారి తీసేది ఏదికి?", options:["a) ప్రమాదకర జీవితం","b) సురక్షిత భవిష్యత్తు", "c) ఒత్తిడి","d) గొడవలు"], answer:1},
+    {q:"11. సహచరుల ఒత్తిడి స్నేహితుల ప్రభావంతో కలుగుతుంది.", options:["సత్యం","అసత్యం"], answer:0},
+    {q:"12. ఖరీదైన బట్టలు వేసుకుంటేనే మనిషి విలువ పెరుగుతుంది.", options:["సత్యం","అసత్యం"], answer:1},
+    {q:"13. పొగతాగడం ఆరోగ్యానికి హానికరం కాదు.", options:["సత్యం","అసత్యం"], answer:1},
+    {q:"14. ఉపాధ్యాయుల సరైన మార్గదర్శనం పిల్లలను మార్చగలదు.", options:["సత్యం","అసత్యం"], answer:0},
+    {q:"15. సోషల్ మీడియాలో కనిపించేదంతా నిజం.", options:["సత్యం","అసత్యం"], answer:1},
+    {q:"16. “లేదు” అని చెప్పడం నేర్చుకోవడం అవసరం.", options:["సత్యం","అసత్యం"], answer:0}
+];
+
+let score = 0;
+let answered = 0;
+const container = document.getElementById("quizContainer");
+const submitBtn = document.getElementById("submitBtn");
+
+questions.forEach((item, index) => {
+    // Create a block for each question
+    let blockDiv = document.createElement("div");
+    blockDiv.className = "question-block";
+
+    // Add question text
+    let qDiv = document.createElement("div");
+    qDiv.className = "question";
+    qDiv.innerText = item.q;
+    blockDiv.appendChild(qDiv);
+
+    // Add options container
+    let optDiv = document.createElement("div");
+    optDiv.className = "options";
+
+    item.options.forEach((opt, i) => {
+        let btn = document.createElement("button");
+        btn.innerText = opt;
+        
+        btn.onclick = function() {
+            // Prevent clicking again if this question block is already answered
+            if (optDiv.classList.contains("answered")) return;
+            optDiv.classList.add("answered");
+
+            // Disable all buttons in this specific question
+            const allButtons = optDiv.querySelectorAll("button");
+            allButtons.forEach(b => b.disabled = true);
+
+            // Check if correct
+            if (i === item.answer) {
+                btn.classList.add("correct");
+                score++;
+            } else {
+                btn.classList.add("wrong");
+                // Reveal the correct answer to the user
+                allButtons[item.answer].classList.add("correct");
+            }
+
+            answered++;
+            updateProgress();
+
+            // Show submit button only when all questions are answered
+            if(answered === questions.length) {
+                submitBtn.style.display = "inline-block";
+                // Smooth scroll down to the submit button
+                submitBtn.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        };
+        optDiv.appendChild(btn);
+    });
+    
+    blockDiv.appendChild(optDiv);
+    container.appendChild(blockDiv);
+});
+
+// Update Progress bar
+function updateProgress() {
+    let percent = (answered / questions.length) * 100;
+    document.getElementById("progressBar").style.width = percent + "%";
+}
+
+// Finish Quiz
+function finishQuiz() {
+    let resultDiv = document.getElementById("result");
+    resultDiv.innerHTML = "🎉 నీ స్కోర్: " + score + " / " + questions.length;
+    resultDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    
+    submitBtn.style.display = "none"; // Hide submit button after clicking
+    startConfetti();
+}
+
+// Colorful, improved Confetti System
+function startConfetti() {
+    const canvas = document.getElementById("confetti");
+    const ctx = canvas.getContext("2d");
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    
+    let pieces = [];
+    const colors = ['#f44336', '#e91e63', '#9c27b0', '#673ab7', '#3f51b5', '#2196f3', '#03a9f4', '#00bcd4', '#009688', '#4CAF50', '#8BC34A', '#CDDC39', '#FFEB3B', '#FFC107', '#FF9800', '#FF5722'];
+
+    for (let i = 0; i < 200; i++) {
+        pieces.push({
+            x: Math.random() * canvas.width,
+            y: Math.random() * canvas.height - canvas.height, // Start above screen
+            w: Math.random() * 10 + 5, // width
+            h: Math.random() * 5 + 2,  // height
+            color: colors[Math.floor(Math.random() * colors.length)],
+            speedY: Math.random() * 3 + 2,
+            speedX: Math.random() * 2 - 1,
+            rotation: Math.random() * 360,
+            rotationSpeed: Math.random() * 10 - 5
+        });
+    }
+
+    let animationId;
+
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        let activePieces = 0;
+
+        pieces.forEach(p => {
+            if (p.y < canvas.height) {
+                activePieces++;
+                ctx.save();
+                ctx.translate(p.x, p.y);
+                ctx.rotate(p.rotation * Math.PI / 180);
+                ctx.fillStyle = p.color;
+                ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+                ctx.restore();
+
+                p.y += p.speedY;
+                p.x += p.speedX;
+                p.rotation += p.rotationSpeed;
+            }
+        });
+
+        if (activePieces > 0) {
+            animationId = requestAnimationFrame(draw);
+        } else {
+            cancelAnimationFrame(animationId);
+            ctx.clearRect(0, 0, canvas.width, canvas.height); // clear at the end
+        }
+    }
+    
+    draw();
+}
+</script>
+
+</body>
+</html>
