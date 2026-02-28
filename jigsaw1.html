@@ -12,7 +12,7 @@
         background: linear-gradient(135deg, #a1c4fd 0%, #c2e9fb 100%);
         text-align: center;
         min-height: 100vh;
-        padding-bottom: 40px;
+        padding-bottom: 200px; 
         overflow-x: hidden;
         user-select: none;
     }
@@ -46,7 +46,7 @@
     .progress-bar {
         height: 100%;
         width: 0%;
-        background: linear-gradient(90deg, #4facfe 0%, #00f2fe 100%);
+        background: linear-gradient(90deg, #f6d365 0%, #fda085 100%); /* Warmer, happier color */
         border-radius: 15px;
         transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
     }
@@ -61,17 +61,14 @@
         border: 4px solid white;
     }
 
-    /* Grid columns/rows are now handled dynamically by JS! */
     #puzzleBoard {
         display: grid;
         gap: 0px; 
         justify-content: center;
-        margin-bottom: 30px;
         background: #f0f4f8;
         padding: 20px;
         border-radius: 16px;
         box-shadow: inset 0 4px 10px rgba(0,0,0,0.05);
-        /* Let the grid autosize based on the content */
         width: max-content; 
         margin-left: auto;
         margin-right: auto;
@@ -84,35 +81,83 @@
 
     #pieces {
         display: flex;
-        flex-wrap: wrap;
-        justify-content: center;
-        gap: 5px;
-        min-height: 120px;
-        padding: 15px;
-        background: #fff;
-        border-radius: 16px;
-        border: 2px dashed #a1c4fd;
+        flex-wrap: nowrap; 
+        overflow-x: auto;  
+        overflow-y: hidden;
+        align-items: center;
+        gap: 10px;
+        padding: 15px 20px;
+        background: #ffffff;
+        border-top: 4px solid #a1c4fd;
+        border-radius: 24px 24px 0 0;
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        min-height: 140px;
+        box-shadow: 0 -10px 25px rgba(0,0,0,0.1);
+        z-index: 500;
+        transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
     }
+
+    #pieces::-webkit-scrollbar { height: 14px; }
+    #pieces::-webkit-scrollbar-track { background: #f0f4f8; border-radius: 10px; margin: 0 20px; }
+    #pieces::-webkit-scrollbar-thumb { background: #ff6b6b; border-radius: 10px; border: 2px solid #ffffff; }
 
     .piece {
         cursor: grab;
         filter: drop-shadow(0 4px 6px rgba(0,0,0,0.2));
         transition: transform 0.1s;
         touch-action: none;
+        flex-shrink: 0; 
     }
 
     .piece.dragging {
         cursor: grabbing;
-        transform: scale(1.1) rotate(3deg);
+        transform: scale(1.1) rotate(5deg);
         filter: drop-shadow(0 15px 20px rgba(0,0,0,0.3));
         z-index: 1000 !important;
     }
 
+    /* NEW: Bouncy animation when placed correctly */
+    @keyframes snapIn {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.15); filter: brightness(1.2); }
+        100% { transform: scale(1); filter: brightness(1); }
+    }
+
     .piece.placed {
-        filter: drop-shadow(0 0px 1px rgba(0,0,0,0.3));
+        filter: none; 
         cursor: default;
         z-index: 10;
+        animation: snapIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); /* Bouncy math */
     }
+
+    /* NEW: Sparkles for correct drops */
+    .sparkle {
+        position: absolute;
+        width: 8px;
+        height: 8px;
+        background: #ffd700;
+        border-radius: 50%;
+        pointer-events: none;
+        z-index: 1001;
+        box-shadow: 0 0 6px #ffae00;
+        animation: flyOut 0.6s ease-out forwards;
+    }
+
+    @keyframes flyOut {
+        0% { transform: translate(0, 0) scale(1); opacity: 1; }
+        100% { transform: translate(var(--tx), var(--ty)) scale(0); opacity: 0; }
+    }
+
+    /* NEW: Wrong drop wobble animation on the tray */
+    @keyframes wobble {
+        0%, 100% { transform: translateX(0); }
+        25% { transform: translateX(-5px) rotate(-1deg); }
+        75% { transform: translateX(5px) rotate(1deg); }
+    }
+    .wobble-tray { animation: wobble 0.3s; }
 
     #result {
         font-size: 28px;
@@ -144,32 +189,92 @@
 
 <div class="container">
     <div id="puzzleBoard"></div>
-    <div id="pieces"></div>
 </div>
+
+<div id="pieces"></div>
 
 <div id="result">🎉 Awesome! You did it! 🎉</div>
 <canvas id="confetti"></canvas>
 
 <script>
+    // --- AUDIO SYNTHESIZER (NO MP3s NEEDED!) ---
+    // This creates fun, retro video game style sounds using math.
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    let audioCtx;
+
+    function playTone(frequency, type, duration, volume = 0.1) {
+        if (!audioCtx) audioCtx = new AudioContext();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        
+        const osc = audioCtx.createOscillator();
+        const gainNode = audioCtx.createGain();
+        
+        osc.type = type;
+        osc.frequency.setValueAtTime(frequency, audioCtx.currentTime);
+        
+        gainNode.gain.setValueAtTime(volume, audioCtx.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+        
+        osc.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+        
+        osc.start();
+        osc.stop(audioCtx.currentTime + duration);
+    }
+
+    // Sound Triggers
+    const sfxPickup = () => playTone(500, 'sine', 0.1, 0.05); // Soft bloop
+    const sfxSnap = () => {
+        playTone(800, 'triangle', 0.15, 0.1); // Bright chime
+        setTimeout(() => playTone(1200, 'sine', 0.2, 0.05), 50); // Little sparkle echo
+    };
+    const sfxError = () => playTone(200, 'sawtooth', 0.2, 0.05); // Low boop
+    const sfxWin = () => {
+        // Happy little melody!
+        setTimeout(() => playTone(400, 'sine', 0.2, 0.1), 0);
+        setTimeout(() => playTone(500, 'sine', 0.2, 0.1), 150);
+        setTimeout(() => playTone(600, 'sine', 0.2, 0.1), 300);
+        setTimeout(() => playTone(800, 'sine', 0.6, 0.1), 450);
+    };
+
+    // --- VISUAL EFFECTS ---
+    function spawnSparkles(x, y) {
+        const colors = ['#ffd700', '#ff6b6b', '#4facfe', '#43e97b'];
+        for (let i = 0; i < 8; i++) {
+            const sparkle = document.createElement('div');
+            sparkle.className = 'sparkle';
+            sparkle.style.left = `${x}px`;
+            sparkle.style.top = `${y}px`;
+            sparkle.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+            
+            // Math to make them fly out in a perfect circle
+            const angle = (i / 8) * Math.PI * 2;
+            const distance = 40 + Math.random() * 20;
+            sparkle.style.setProperty('--tx', `${Math.cos(angle) * distance}px`);
+            sparkle.style.setProperty('--ty', `${Math.sin(angle) * distance}px`);
+            
+            document.body.appendChild(sparkle);
+            setTimeout(() => sparkle.remove(), 600); // Clean up after animation
+        }
+    }
+
+
     // --- PUZZLE SETTINGS ---
     const rows = 4;
     const cols = 3;
-    const pieceSize = 100; // Size of each square in pixels
-    const bumpSize = 20;   // How far the interlocking tabs stick out
+    const pieceSize = 100;
+    const bumpSize = 20;
 
-    // Dynamically calculate total width and height!
     const puzzleWidth = cols * pieceSize;  
     const puzzleHeight = rows * pieceSize; 
 
-    // Using a cute kitten so you can test it live! Change back to "puzzle1.png" when ready.
-    const imageSrc = "puzzle1.png";
+    const imageSrc = "puzzle1.png"; // Replace with your image
 
     const board = document.getElementById("puzzleBoard");
     const piecesContainer = document.getElementById("pieces");
     let correctPlaced = 0;
     const totalPieces = rows * cols;
 
-    // Dynamically set CSS Grid
     board.style.gridTemplateColumns = `repeat(${cols}, ${pieceSize}px)`;
     board.style.gridTemplateRows = `repeat(${rows}, ${pieceSize}px)`;
 
@@ -179,7 +284,6 @@
     img.onload = () => initPuzzle();
 
     function initPuzzle() {
-        // 1. Create Drop Slots
         for (let i = 0; i < totalPieces; i++) {
             const slot = document.createElement("div");
             slot.className = "slot";
@@ -189,7 +293,6 @@
             board.appendChild(slot);
         }
 
-        // 2. Generate Random Interlocking Shapes (1 = out, -1 = in)
         let hBumps = [];
         for(let r=0; r<rows-1; r++) {
             let rowBumps = [];
@@ -203,7 +306,6 @@
             vBumps.push(rowBumps);
         }
 
-        // 3. Create Canvas Pieces
         let piecesArray = [];
         for (let r = 0; r < rows; r++) {
             for (let c = 0; c < cols; c++) {
@@ -218,7 +320,6 @@
             }
         }
 
-        // Shuffle and add to tray
         piecesArray.sort(() => Math.random() - 0.5);
         piecesArray.forEach(piece => {
             piecesContainer.appendChild(piece);
@@ -226,7 +327,6 @@
         });
     }
 
-    // --- The Magic Shape Generator ---
     function createPieceCanvas(col, row, t, r, b, l) {
         const canvas = document.createElement("canvas");
         const ctx = canvas.getContext("2d");
@@ -246,28 +346,24 @@
         const cx = pw / 2;
         const cy = ph / 2;
 
-        // Top
         if (t === 0) ctx.lineTo(pw, 0);
         else {
             ctx.lineTo(cx - 15, 0);
             ctx.bezierCurveTo(cx - 25, -bumpSize * 1.5 * t, cx + 25, -bumpSize * 1.5 * t, cx + 15, 0);
             ctx.lineTo(pw, 0);
         }
-        // Right
         if (r === 0) ctx.lineTo(pw, ph);
         else {
             ctx.lineTo(pw, cy - 15);
             ctx.bezierCurveTo(pw + bumpSize * 1.5 * r, cy - 25, pw + bumpSize * 1.5 * r, cy + 25, pw, cy + 15);
             ctx.lineTo(pw, ph);
         }
-        // Bottom
         if (b === 0) ctx.lineTo(0, ph);
         else {
             ctx.lineTo(cx + 15, ph);
             ctx.bezierCurveTo(cx + 25, ph + bumpSize * 1.5 * b, cx - 25, ph + bumpSize * 1.5 * b, cx - 15, ph);
             ctx.lineTo(0, ph);
         }
-        // Left
         if (l === 0) ctx.lineTo(0, 0);
         else {
             ctx.lineTo(0, cy + 15);
@@ -277,7 +373,6 @@
         ctx.closePath();
         ctx.clip(); 
 
-        // Draw image into the shape
         const scaleX = img.width / puzzleWidth;
         const scaleY = img.height / puzzleHeight;
         
@@ -288,10 +383,13 @@
 
         ctx.drawImage(img, sx, sy, sWidth, sHeight, -bumpSize, -bumpSize, canvas.width, canvas.height);
         
+        ctx.lineWidth = 1.5;
+        ctx.strokeStyle = "rgba(0, 0, 0, 0.15)";
+        ctx.stroke();
+
         return canvas;
     }
 
-    // --- Drag & Drop Logic ---
     function enableDrag(piece) {
         let isDragging = false;
         let offsetX, offsetY;
@@ -301,6 +399,8 @@
         function startDrag(e) {
             if (piece.classList.contains('placed')) return;
             
+            sfxPickup(); // Play sound on pickup!
+
             isDragging = true;
             piece.classList.add('dragging');
             
@@ -355,6 +455,10 @@
                     piece.classList.add('placed');
                     slot.style.boxShadow = "none";
 
+                    // Trigger Rewards!
+                    sfxSnap();
+                    spawnSparkles(rect.left + (rect.width / 2), rect.top + (rect.height / 2));
+
                     droppedCorrectly = true;
                     correctPlaced++;
                     updateProgress();
@@ -364,22 +468,34 @@
             }
         });
 
+        // If dropped outside/incorrectly
         if (!droppedCorrectly) {
+            sfxError(); // Play error boop
             piecesContainer.appendChild(piece);
-            piece.style.position = "relative";
+            piece.style.position = "relative"; 
             piece.style.left = "0";
             piece.style.top = "0";
+
+            // Make the tray wobble a little bit
+            piecesContainer.classList.remove("wobble-tray");
+            void piecesContainer.offsetWidth; // trigger reflow
+            piecesContainer.classList.add("wobble-tray");
         }
     }
 
-    // --- UI Effects ---
     function updateProgress() {
         const percent = (correctPlaced / totalPieces) * 100;
         document.getElementById("progressBar").style.width = percent + "%";
     }
 
     function finishGame() {
+        sfxWin(); // Play victory tune!
         document.getElementById("result").style.opacity = "1";
+        
+        // Slide tray down and away
+        document.getElementById("pieces").style.transform = "translateY(150%)";
+        setTimeout(() => document.getElementById("pieces").style.display = "none", 500);
+        
         startConfetti();
     }
 
@@ -390,13 +506,13 @@
         canvas.height = window.innerHeight;
 
         let particles = [];
-        for (let i = 0; i < 150; i++) {
+        for (let i = 0; i < 250; i++) { // Increased confetti count!
             particles.push({
                 x: Math.random() * canvas.width,
                 y: Math.random() * canvas.height - canvas.height,
                 size: Math.random() * 8 + 6,
-                speedY: Math.random() * 3 + 2,
-                speedX: Math.random() * 2 - 1,
+                speedY: Math.random() * 3 + 4, // Make it fall a bit faster
+                speedX: Math.random() * 4 - 2, // Make it drift wider
                 color: `hsl(${Math.random() * 360}, 100%, 65%)`,
                 rotation: Math.random() * 360,
                 rotationSpeed: Math.random() * 10 - 5
