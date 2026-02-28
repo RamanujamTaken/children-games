@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fun Jigsaw Puzzle 🎉</title>
+
+<style>
+    body {
+        margin: 0;
+        font-family: 'Comic Sans MS', 'Segoe UI', Tahoma, sans-serif;
+        background: linear-gradient(135deg, #a1c4fd 0%, #c2e9fb 100%);
+        text-align: center;
+        min-height: 100vh;
+        padding-bottom: 40px;
+        overflow-x: hidden;
+        user-select: none;
+    }
+
+    h1 {
+        color: #ff6b6b;
+        padding: 20px 10px;
+        margin: 0;
+        font-size: 2.5em;
+        text-shadow: 2px 2px 0px white, 4px 4px 8px rgba(0,0,0,0.1);
+        animation: float 3s infinite ease-in-out;
+    }
+
+    @keyframes float {
+        0%, 100% { transform: translateY(0) rotate(-1deg); }
+        50% { transform: translateY(-8px) rotate(1deg); }
+    }
+
+    .progress {
+        width: 90%;
+        max-width: 500px;
+        height: 25px;
+        background: rgba(255, 255, 255, 0.6);
+        border-radius: 20px;
+        margin: 10px auto 20px auto;
+        border: 3px solid white;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        overflow: hidden;
+    }
+
+    .progress-bar {
+        height: 100%;
+        width: 0%;
+        background: linear-gradient(90deg, #4facfe 0%, #00f2fe 100%);
+        border-radius: 15px;
+        transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .container {
+        max-width: 500px;
+        margin: auto;
+        background: rgba(255, 255, 255, 0.9);
+        border-radius: 24px;
+        padding: 20px;
+        box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+        border: 4px solid white;
+    }
+
+    /* Grid columns/rows are now handled dynamically by JS! */
+    #puzzleBoard {
+        display: grid;
+        gap: 0px; 
+        justify-content: center;
+        margin-bottom: 30px;
+        background: #f0f4f8;
+        padding: 20px;
+        border-radius: 16px;
+        box-shadow: inset 0 4px 10px rgba(0,0,0,0.05);
+        /* Let the grid autosize based on the content */
+        width: max-content; 
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    .slot {
+        position: relative;
+        box-shadow: inset 0 0 0 1px rgba(0,0,0,0.05);
+    }
+
+    #pieces {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 5px;
+        min-height: 120px;
+        padding: 15px;
+        background: #fff;
+        border-radius: 16px;
+        border: 2px dashed #a1c4fd;
+    }
+
+    .piece {
+        cursor: grab;
+        filter: drop-shadow(0 4px 6px rgba(0,0,0,0.2));
+        transition: transform 0.1s;
+        touch-action: none;
+    }
+
+    .piece.dragging {
+        cursor: grabbing;
+        transform: scale(1.1) rotate(3deg);
+        filter: drop-shadow(0 15px 20px rgba(0,0,0,0.3));
+        z-index: 1000 !important;
+    }
+
+    .piece.placed {
+        filter: drop-shadow(0 0px 1px rgba(0,0,0,0.3));
+        cursor: default;
+        z-index: 10;
+    }
+
+    #result {
+        font-size: 28px;
+        font-weight: bold;
+        color: #ff6b6b;
+        margin-top: 20px;
+        text-shadow: 2px 2px 0px white;
+        opacity: 0;
+        transition: opacity 0.5s;
+    }
+
+    #confetti {
+        position: fixed;
+        top: 0;
+        left: 0;
+        pointer-events: none;
+        z-index: 9999;
+    }
+</style>
+</head>
+
+<body>
+
+<h1>🧩 Magical Jigsaw! ✨</h1>
+
+<div class="progress">
+    <div class="progress-bar" id="progressBar"></div>
+</div>
+
+<div class="container">
+    <div id="puzzleBoard"></div>
+    <div id="pieces"></div>
+</div>
+
+<div id="result">🎉 Awesome! You did it! 🎉</div>
+<canvas id="confetti"></canvas>
+
+<script>
+    // --- PUZZLE SETTINGS ---
+    const rows = 4;
+    const cols = 3;
+    const pieceSize = 100; // Size of each square in pixels
+    const bumpSize = 20;   // How far the interlocking tabs stick out
+
+    // Dynamically calculate total width and height!
+    const puzzleWidth = cols * pieceSize;  
+    const puzzleHeight = rows * pieceSize; 
+
+    // Using a cute kitten so you can test it live! Change back to "puzzle1.png" when ready.
+    const imageSrc = "puzzle1.png";
+
+    const board = document.getElementById("puzzleBoard");
+    const piecesContainer = document.getElementById("pieces");
+    let correctPlaced = 0;
+    const totalPieces = rows * cols;
+
+    // Dynamically set CSS Grid
+    board.style.gridTemplateColumns = `repeat(${cols}, ${pieceSize}px)`;
+    board.style.gridTemplateRows = `repeat(${rows}, ${pieceSize}px)`;
+
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.src = imageSrc;
+    img.onload = () => initPuzzle();
+
+    function initPuzzle() {
+        // 1. Create Drop Slots
+        for (let i = 0; i < totalPieces; i++) {
+            const slot = document.createElement("div");
+            slot.className = "slot";
+            slot.style.width = `${pieceSize}px`;
+            slot.style.height = `${pieceSize}px`;
+            slot.dataset.index = i;
+            board.appendChild(slot);
+        }
+
+        // 2. Generate Random Interlocking Shapes (1 = out, -1 = in)
+        let hBumps = [];
+        for(let r=0; r<rows-1; r++) {
+            let rowBumps = [];
+            for(let c=0; c<cols; c++) rowBumps.push(Math.random() > 0.5 ? 1 : -1);
+            hBumps.push(rowBumps);
+        }
+        let vBumps = [];
+        for(let r=0; r<rows; r++) {
+            let rowBumps = [];
+            for(let c=0; c<cols-1; c++) rowBumps.push(Math.random() > 0.5 ? 1 : -1);
+            vBumps.push(rowBumps);
+        }
+
+        // 3. Create Canvas Pieces
+        let piecesArray = [];
+        for (let r = 0; r < rows; r++) {
+            for (let c = 0; c < cols; c++) {
+                const t = (r === 0) ? 0 : -hBumps[r-1][c]; 
+                const b = (r === rows - 1) ? 0 : hBumps[r][c];
+                const l = (c === 0) ? 0 : -vBumps[r][c-1];
+                const rBump = (c === cols - 1) ? 0 : vBumps[r][c];
+
+                const piece = createPieceCanvas(c, r, t, rBump, b, l);
+                piece.dataset.index = r * cols + c;
+                piecesArray.push(piece);
+            }
+        }
+
+        // Shuffle and add to tray
+        piecesArray.sort(() => Math.random() - 0.5);
+        piecesArray.forEach(piece => {
+            piecesContainer.appendChild(piece);
+            enableDrag(piece);
+        });
+    }
+
+    // --- The Magic Shape Generator ---
+    function createPieceCanvas(col, row, t, r, b, l) {
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d");
+        
+        const pw = pieceSize; 
+        const ph = pieceSize; 
+        
+        canvas.width = pw + bumpSize * 2;
+        canvas.height = ph + bumpSize * 2;
+        canvas.className = "piece";
+
+        ctx.translate(bumpSize, bumpSize); 
+        
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        
+        const cx = pw / 2;
+        const cy = ph / 2;
+
+        // Top
+        if (t === 0) ctx.lineTo(pw, 0);
+        else {
+            ctx.lineTo(cx - 15, 0);
+            ctx.bezierCurveTo(cx - 25, -bumpSize * 1.5 * t, cx + 25, -bumpSize * 1.5 * t, cx + 15, 0);
+            ctx.lineTo(pw, 0);
+        }
+        // Right
+        if (r === 0) ctx.lineTo(pw, ph);
+        else {
+            ctx.lineTo(pw, cy - 15);
+            ctx.bezierCurveTo(pw + bumpSize * 1.5 * r, cy - 25, pw + bumpSize * 1.5 * r, cy + 25, pw, cy + 15);
+            ctx.lineTo(pw, ph);
+        }
+        // Bottom
+        if (b === 0) ctx.lineTo(0, ph);
+        else {
+            ctx.lineTo(cx + 15, ph);
+            ctx.bezierCurveTo(cx + 25, ph + bumpSize * 1.5 * b, cx - 25, ph + bumpSize * 1.5 * b, cx - 15, ph);
+            ctx.lineTo(0, ph);
+        }
+        // Left
+        if (l === 0) ctx.lineTo(0, 0);
+        else {
+            ctx.lineTo(0, cy + 15);
+            ctx.bezierCurveTo(-bumpSize * 1.5 * l, cy + 25, -bumpSize * 1.5 * l, cy - 25, 0, cy - 15);
+            ctx.lineTo(0, 0);
+        }
+        ctx.closePath();
+        ctx.clip(); 
+
+        // Draw image into the shape
+        const scaleX = img.width / puzzleWidth;
+        const scaleY = img.height / puzzleHeight;
+        
+        const sx = (col * pw - bumpSize) * scaleX;
+        const sy = (row * ph - bumpSize) * scaleY;
+        const sWidth = canvas.width * scaleX;
+        const sHeight = canvas.height * scaleY;
+
+        ctx.drawImage(img, sx, sy, sWidth, sHeight, -bumpSize, -bumpSize, canvas.width, canvas.height);
+        
+        return canvas;
+    }
+
+    // --- Drag & Drop Logic ---
+    function enableDrag(piece) {
+        let isDragging = false;
+        let offsetX, offsetY;
+
+        piece.addEventListener("pointerdown", startDrag);
+
+        function startDrag(e) {
+            if (piece.classList.contains('placed')) return;
+            
+            isDragging = true;
+            piece.classList.add('dragging');
+            
+            const rect = piece.getBoundingClientRect();
+            offsetX = e.clientX - rect.left;
+            offsetY = e.clientY - rect.top;
+
+            document.body.appendChild(piece);
+            piece.style.position = "absolute";
+            moveAt(e.pageX, e.pageY);
+
+            piece.setPointerCapture(e.pointerId);
+            piece.addEventListener("pointermove", onMouseMove);
+            piece.addEventListener("pointerup", stopDrag);
+        }
+
+        function moveAt(pageX, pageY) {
+            piece.style.left = pageX - offsetX + 'px';
+            piece.style.top = pageY - offsetY + 'px';
+        }
+
+        function onMouseMove(e) {
+            if (!isDragging) return;
+            moveAt(e.pageX, e.pageY);
+        }
+
+        function stopDrag(e) {
+            if (!isDragging) return;
+            isDragging = false;
+            piece.classList.remove('dragging');
+            piece.removeEventListener("pointermove", onMouseMove);
+            piece.removeEventListener("pointerup", stopDrag);
+            piece.releasePointerCapture(e.pointerId);
+
+            checkDropZone(piece, e.clientX, e.clientY);
+        }
+    }
+
+    function checkDropZone(piece, mouseX, mouseY) {
+        const slots = document.querySelectorAll(".slot");
+        let droppedCorrectly = false;
+
+        slots.forEach(slot => {
+            const rect = slot.getBoundingClientRect();
+            
+            if (mouseX > rect.left && mouseX < rect.right && mouseY > rect.top && mouseY < rect.bottom) {
+                if (slot.dataset.index === piece.dataset.index) {
+                    slot.appendChild(piece);
+                    piece.style.position = "absolute";
+                    piece.style.left = `-${bumpSize}px`;
+                    piece.style.top = `-${bumpSize}px`;
+                    piece.classList.add('placed');
+                    slot.style.boxShadow = "none";
+
+                    droppedCorrectly = true;
+                    correctPlaced++;
+                    updateProgress();
+
+                    if (correctPlaced === totalPieces) finishGame();
+                }
+            }
+        });
+
+        if (!droppedCorrectly) {
+            piecesContainer.appendChild(piece);
+            piece.style.position = "relative";
+            piece.style.left = "0";
+            piece.style.top = "0";
+        }
+    }
+
+    // --- UI Effects ---
+    function updateProgress() {
+        const percent = (correctPlaced / totalPieces) * 100;
+        document.getElementById("progressBar").style.width = percent + "%";
+    }
+
+    function finishGame() {
+        document.getElementById("result").style.opacity = "1";
+        startConfetti();
+    }
+
+    function startConfetti() {
+        const canvas = document.getElementById("confetti");
+        const ctx = canvas.getContext("2d");
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        let particles = [];
+        for (let i = 0; i < 150; i++) {
+            particles.push({
+                x: Math.random() * canvas.width,
+                y: Math.random() * canvas.height - canvas.height,
+                size: Math.random() * 8 + 6,
+                speedY: Math.random() * 3 + 2,
+                speedX: Math.random() * 2 - 1,
+                color: `hsl(${Math.random() * 360}, 100%, 65%)`,
+                rotation: Math.random() * 360,
+                rotationSpeed: Math.random() * 10 - 5
+            });
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            particles.forEach(p => {
+                ctx.save();
+                ctx.translate(p.x, p.y);
+                ctx.rotate(p.rotation * Math.PI / 180);
+                
+                ctx.fillStyle = p.color;
+                ctx.beginPath();
+                ctx.roundRect(-p.size/2, -p.size/2, p.size, p.size * 1.5, 3);
+                ctx.fill();
+                ctx.restore();
+
+                p.y += p.speedY;
+                p.x += p.speedX;
+                p.rotation += p.rotationSpeed;
+
+                if (p.y > canvas.height) {
+                    p.y = -20;
+                    p.x = Math.random() * canvas.width;
+                }
+            });
+            requestAnimationFrame(draw);
+        }
+        draw();
+    }
+</script>
+
+</body>
+</html>
