@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="te">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>జెండర్ – Pre-Quiz</title>
+
+<style>
+    body {
+        margin: 0;
+        font-family: 'Comic Sans MS', 'Segoe UI', Tahoma, sans-serif;
+        background: linear-gradient(135deg, #a1c4fd 0%, #c2e9fb 100%);
+        text-align: center;
+        min-height: 100vh;
+        padding-bottom: 40px;
+        overflow-x: hidden;
+        position: relative;
+    }
+
+    .floating-background {
+        position: fixed;
+        top: 0; left: 0; width: 100%; height: 100%;
+        pointer-events: none;
+        z-index: -1;
+        overflow: hidden;
+    }
+    .float-shape {
+        position: absolute;
+        opacity: 0.2;
+        animation: bgFloat 20s infinite linear;
+        font-size: 40px;
+    }
+    @keyframes bgFloat {
+        0% { transform: translateY(110vh) rotate(0deg); }
+        100% { transform: translateY(-10vh) rotate(360deg); }
+    }
+    
+    h1 {
+        color: #ff6b6b;
+        padding: 20px 10px;
+        margin: 0;
+        text-shadow: 3px 3px 0px #ffffff, 5px 5px 10px rgba(0,0,0,0.1);
+        animation: floatTitle 3s infinite ease-in-out;
+        font-size: 2em;
+    }
+
+    @keyframes floatTitle {
+        0%, 100% { transform: translateY(0) rotate(-2deg); }
+        50% { transform: translateY(-10px) rotate(2deg); }
+    }
+
+    .progress {
+        width: 90%;
+        max-width: 600px;
+        height: 20px;
+        background: rgba(255, 255, 255, 0.6);
+        border-radius: 20px;
+        margin: 15px auto 25px auto;
+        box-shadow: inset 0 2px 5px rgba(0,0,0,0.1), 0 0 0 4px rgba(255,255,255,0.3);
+        overflow: hidden;
+    }
+
+    .progress-bar {
+        height: 100%;
+        width: 0%;
+        background: linear-gradient(90deg, #00C853, #B2FF59);
+        border-radius: 20px;
+        transition: width 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .container {
+        max-width: 600px;
+        background: rgba(255, 255, 255, 0.95);
+        margin: 0 auto 20px auto;
+        padding: 25px;
+        border-radius: 25px;
+        box-shadow: 0 15px 35px rgba(0,0,0,0.1), 0 5px 0px #e0e0e0;
+        text-align: left;
+        border: 3px solid #ffffff;
+    }
+
+    .question-block {
+        margin-bottom: 25px;
+        padding-bottom: 20px;
+        border-bottom: 2px dashed #bce0fd;
+    }
+    
+    .question-block:last-child {
+        border-bottom: none;
+        margin-bottom: 0;
+        padding-bottom: 0;
+    }
+
+    .question {
+        margin: 0 0 15px 0;
+        font-weight: 700;
+        font-size: 1.2em;
+        color: #4a4a4a;
+    }
+
+    .options button {
+        display: block;
+        width: 100%;
+        margin: 12px 0;
+        padding: 15px;
+        border: 3px solid #f0f0f0;
+        border-radius: 15px;
+        cursor: pointer;
+        background: #fff;
+        font-size: 1.05em;
+        transition: all 0.2s;
+        text-align: left;
+        font-family: inherit;
+        box-shadow: 0 4px 0 #e0e0e0;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .options button:hover:not(:disabled) {
+        border-color: #a1c4fd;
+        background: #f8fbff;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 0 #d0d0d0;
+    }
+    
+    .options button:active:not(:disabled) {
+        transform: translateY(2px);
+        box-shadow: 0 2px 0 #d0d0d0;
+    }
+
+    .options button:disabled {
+        cursor: default;
+        opacity: 0.9;
+        color: #555;
+        box-shadow: none;
+        transform: translateY(4px);
+        border: 3px solid #e0e0e0 !important;
+    }
+
+    .correct {
+        background: linear-gradient(to right, #d4edda, #c3e6cb) !important;
+        border-color: #28a745 !important;
+        color: #0f5132 !important;
+        font-weight: bold;
+    }
+    .correct::before {
+        content: '✅ ';
+    }
+
+    .wrong {
+        background: linear-gradient(to right, #f8d7da, #f5c6cb) !important;
+        border-color: #dc3545 !important;
+        color: #842029 !important;
+    }
+    .wrong::before {
+        content: '❌ ';
+    }
+
+    .submit {
+        background: linear-gradient(45deg, #ff4081, #ff80ab);
+        color: white;
+        padding: 15px 40px;
+        border: none;
+        border-radius: 30px;
+        font-size: 20px;
+        font-weight: bold;
+        margin: 30px auto;
+        cursor: pointer;
+        box-shadow: 0 5px 15px rgba(255, 64, 129, 0.4), 0 5px 0 #c60055;
+        transition: 0.2s;
+        display: none;
+        font-family: inherit;
+    }
+
+    .submit:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 20px rgba(255, 64, 129, 0.6), 0 8px 0 #c60055;
+    }
+    
+    .submit:active {
+        transform: translateY(2px);
+        box-shadow: 0 2px 5px rgba(255, 64, 129, 0.4), 0 2px 0 #c60055;
+    }
+
+    #result {
+        font-size: 32px;
+        color: #ff6b6b;
+        background: rgba(255,255,255,0.9);
+        display: inline-block;
+        padding: 20px 40px;
+        border-radius: 20px;
+        font-weight: bold;
+        margin-top: 20px;
+        text-shadow: 2px 2px 0px white;
+        box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        border: 3px solid white;
+    }
+
+    canvas {
+        position: fixed;
+        top: 0;
+        left: 0;
+        pointer-events: none;
+        z-index: 1000;
+    }
+
+    .reward-pop {
+        position: fixed;
+        font-size: 30px;
+        pointer-events: none;
+        z-index: 9999;
+        animation: floatUp 1s ease-out forwards;
+    }
+
+    @keyframes floatUp {
+        0% { opacity: 1; transform: translate(-50%, -50%) scale(0.5); }
+        50% { transform: translate(-50%, -150%) scale(1.2) rotate(20deg); }
+        100% { opacity: 0; transform: translate(-50%, -300%) scale(1) rotate(-20deg); }
+    }
+</style>
+</head>
+<body>
+
+<audio id="correctSound" src="data:audio/mpeg;base64,//NkxAA6gALsAS7AEA1gC0ZgAAAAACWAAAAAABAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//NkxAc6kAbAAbAAaAEAAAAAEsAAAAAABAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//NkxAY6kAbAAbAAaAEAAAAAEsAAAAAABAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//NkxA86kAbAAbAAaAEAAAAAEsAAAAAABAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//NkxBc6kAbAAbAAaAEAAAAAEsAAAAAABAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//NkxBk6kAbAAbAAaAEAAAAAEsAAAAAABAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//NkxB86kAbAAbAAaAEAAAAAEsAAAAAABAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//NkxCI6kAbAAbAAaAEAAAAAEsAAAAAABAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//NkxCY6kAbAAbAAaAEAAAAAEsAAAAAABAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//NkxDA6kAbAAbAAaAEAAAAAEsAAAAAABAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//NkxDk6kAbAAbAAaAEAAAAAEsAAAAAABAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//NkxEI6kAbAAbAAaAEAAAAAEsAAAAAABAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//NkxEs6kAbAAbAAaAEAAAAAEsAAAAAABAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//NkxFM6kAbAAbAAaAEAAAAAEsAAAAAABAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//NkxFY6kAbAAbAAaAEAAAAAEsAAAAAABAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//NkxGA6kAbAAbAAaAEAAAAAEsAAAAAABAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//NkxGk6kAbAAbAAaAEAAAAAEsAAAAAABAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//NkxHI6kAbAAbAAaAEAAAAAEsAAAAAABAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//NkxHs6kAbAAbAAaAEAAAAAEsAAAAAABAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//NkxIM6kAbAAbAAaAEAAAAAEsAAAAAABAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//NkxIs6kAbAAbAAaAEAAAAAEsAAAAAABAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//NkxJY6kAbAAbAAaAEAAAAAEsAAAAAABAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//NkxKI6kAbAAbAAaAEAAAAAEsAAAAAABAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//NkxKw6kAbAAbAAaAEAAAAAEsAAAAAABAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//NkxLY6kAbAAbAAaAEAAAAAEsAAAAAABAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//NkxMM6kAbAAbAAaAEAAAAAEsAAAAAABAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//NkxMs6kAbAAbAAaAEAAAAAEsAAAAAABAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//NkxNQ6kAbAAbAAaAEAAAAAEsAAAAAABAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//NkxN06kAbAAbAAaAEAAAAAEsAAAAAABAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//NkxOY6kAbAAbAAaAEAAAAAEsAAAAAABAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//NkxO46kAbAAbAAaAEAAAAAEsAAAAAABAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//NkxPc6kAbAAbAAaAEAAAAAEsAAAAAABAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//NkxQI6kAbAAbAAaAEAAAAAEsAAAAAABAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//NkxQw6kAbAAbAAaAEAAAAAEsAAAAAABAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//NkxRY6kAbAAbAAaAEAAAAAEsAAAAAABAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//NkxR86kAbAAbAAaAEAAAAAEsAAAAAABAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//NkxSo6kAbAAbAAaAEAAAAAEsAAAAAABAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//NkxTI6kAbAAbAAaAEAAAAAEsAAAAAABAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//NkxTs6kAbAAbAAaAEAAAAAEsAAAAAABAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//NkxUU6kAbAAbAAaAEAAAAAEsAAAAAABAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//NkxVA6kAbAAbAAaAEAAAAAEsAAAAAABAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//NkxVo6kAbAAbAAaAEAAAAAEsAAAAAABAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//NkxWI6kAbAAbAAaAEAAAAAEsAAAAAABAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//NkxWs6kAbAAbAAaAEAAAAAEsAAAAAABAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//NkxXU6kAbAAbAAaAEAAAAAEsAAAAAABAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//NkxX46kAbAAbAAaAEAAAAAEsAAAAAABAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//NkxYc6kAbAAbAAaAEAAAAAEsAAAAAABAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//NkxZE6kAbAAbAAaAEAAAAAEsAAAAAABAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//NkxZs6kAbAAbAAaAEAAAAAEsAAAAAABAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//Nkxac6kAbAAbAAaAEAAAAAEsAAAAAABAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//Nkxa86kAbAAbAAaAEAAAAAEsAAAAAABAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//Nkxbk6kAbAAbAAaAEAAAAAEsAAAAAABAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//NkxcM6kAbAAbAAaAEAAAAAEsAAAAAABAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//Nkxcw6kAbAAbAAaAEAAAAAEsAAAAAABAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//NkxdU6kAbAAbAAaAEAAAAAEsAAAAAABAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//Nkxd06kAbAAbAAaAEAAAAAEsAAAAAABAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//Nkxec6kAbAAbAAaAEAAAAAEsAAAAAABAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//NkxFE6kAbAAbAAaAEAAAAAEsAAAAAABAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"></audio>
+
+<div class="floating-background">
+    <div class="float-shape" style="left: 10%; animation-duration: 25s;">☁️</div>
+    <div class="float-shape" style="left: 30%; animation-duration: 20s; animation-delay: -5s;">✨</div>
+    <div class="float-shape" style="left: 50%; animation-duration: 28s; animation-delay: -10s;">🧠</div>
+    <div class="float-shape" style="left: 70%; animation-duration: 22s; animation-delay: -2s;">💡</div>
+    <div class="float-shape" style="left: 90%; animation-duration: 26s; animation-delay: -7s;">🌟</div>
+</div>
+
+<h1>🎯 జెండర్ – Pre-Quiz 🧠</h1>
+
+<div class="progress">
+    <div class="progress-bar" id="progressBar"></div>
+</div>
+
+<div class="container" id="quizContainer"></div>
+
+<button class="submit" id="submitBtn" onclick="finishQuiz()">Submit Quiz 🎉</button>
+
+<div id="result" style="display: none;"></div>
+<canvas id="confetti"></canvas>
+
+<script>
+const questions = [
+    {q:"1. జీవశాస్త్ర పరంగా (Biological Perspective) లింగం (Sex) అంటే ఏమిటి?", 
+     options:["సమాజం నిర్దేశించిన పాత్రలు", "శారీరక మరియు క్రోమోజోమల్ లక్షణాలు", "వ్యక్తి అభిరుచులు", "వృత్తి ఎంపిక"], 
+     answer:1},
+
+    {q:"2. లింగ భావన (Gender) ప్రధానంగా ఏ దేనికి సంబంధించినది?", 
+     options:["హార్మోన్లు", "శరీర నిర్మాణం", "సామాజిక అంచనాలు మరియు పాత్రలు", "వయస్సు"], 
+     answer:2},
+
+    {q:"3. “అమ్మాయిలు గణితంలో బలహీనులు” అనే భావన ఏ వర్గంలోకి వస్తుంది?", 
+     options:["శాస్త్రీయ సిద్ధాంతం", "స్టీరియోటైప్", "జీవశాస్త్ర సత్యం", "వ్యక్తిగత అనుభవం"], 
+     answer:1},
+
+    {q:"4. సమానత్వం (Equality) యొక్క సరైన అర్థం ఏమిటి?", 
+     options:["అందరికీ ఒకే విధమైన ఫలితం రావాలి", "అందరికీ ఒకే విధమైన అవకాశం ఇవ్వాలి", "బలమైనవారికి ప్రాధాన్యం ఇవ్వాలి", "వయస్సు ఆధారంగా విభజించాలి"], 
+     answer:1},
+
+    {q:"5. న్యాయం (Equity) అంటే ఏమిటి?", 
+     options:["అందరికీ ఒకే విధమైన సహాయం", "అవసరాన్ని బట్టి మద్దతు ఇవ్వడం", "పోటీ పెంచడం", "శిక్ష విధించడం"], 
+     answer:1},
+
+    {q:"6. ఒక వ్యక్తి సామర్థ్యం (Ability) ప్రధానంగా ఏ దేనిపై ఆధారపడి ఉంటుంది?", 
+     options:["లింగం", "సాధన మరియు అనుభవం", "కుటుంబ ఆర్థిక స్థితి మాత్రమే", "జన్యు నిర్మాణం మాత్రమే"], 
+     answer:1},
+
+    {q:"7. స్టీరియోటైప్ థ్రెట్ (Stereotype Threat) వల్ల ఏమి జరుగుతుంది?", 
+     options:["ఆత్మవిశ్వాసం పెరుగుతుంది", "పనితీరు మెరుగవుతుంది", "భయంతో పనితీరు తగ్గుతుంది", "పోటీ పెరుగుతుంది"], 
+     answer:2},
+
+    {q:"8. కుటుంబంలో లింగ ఆధారిత పనుల విభజన వల్ల ఏ ప్రభావం కలగవచ్చు?", 
+     options:["సమాన అవకాశాలు పెరుగుతాయి", "అసమానత బలపడుతుంది", "ఆత్మవిశ్వాసం పెరుగుతుంది", "సహకారం పెరుగుతుంది"], 
+     answer:1},
+
+    {q:"9. భావోద్వేగాలను అణచిపెట్టడం వల్ల ఏం జరుగుతుంది?", 
+     options:["మానసిక సమతుల్యత పెరుగుతుంది", "భావోద్వేగ అవగాహన తగ్గుతుంది", "నాయకత్వం పెరుగుతుంది", "శారీరక బలం పెరుగుతుంది"], 
+     answer:1},
+
+    {q:"10. లింగం మరియు సామర్థ్యం మధ్య సంబంధం గురించి సరైన వాక్యం ఏది?", 
+     options:["లింగం సామర్థ్యాన్ని నిర్ణయిస్తుంది", "సామర్థ్యం లింగంతో సంబంధం లేదు", "లింగమే ప్రతిభ", "సామర్థ్యం పుట్టుకతో స్థిరమవుతుంది"], 
+     answer:1}
+];
+let score = 0;
+let answered = 0;
+const container = document.getElementById("quizContainer");
+const submitBtn = document.getElementById("submitBtn");
+const correctSound = document.getElementById("correctSound");
+
+const rewards = ['💎', '⭐', '🍎', '🎉', '✨', '🦄', '💰'];
+
+questions.forEach((item, index) => {
+    let blockDiv = document.createElement("div");
+    blockDiv.className = "question-block";
+
+    let qDiv = document.createElement("div");
+    qDiv.className = "question";
+    qDiv.innerText = item.q;
+    blockDiv.appendChild(qDiv);
+
+    let optDiv = document.createElement("div");
+    optDiv.className = "options";
+
+    item.options.forEach((opt, i) => {
+        let btn = document.createElement("button");
+        btn.innerText = opt;
+        
+        btn.onclick = function(e) {
+            if (optDiv.classList.contains("answered")) return;
+            optDiv.classList.add("answered");
+
+            const allButtons = optDiv.querySelectorAll("button");
+            allButtons.forEach(b => b.disabled = true);
+
+            if (i === item.answer) {
+                btn.classList.add("correct");
+                score++;
+                triggerReward(e);
+            } else {
+                btn.classList.add("wrong");
+                allButtons[item.answer].classList.add("correct");
+            }
+
+            answered++;
+            updateProgress();
+
+            if(answered === questions.length) {
+                submitBtn.style.display = "inline-block";
+                setTimeout(() => {
+                     submitBtn.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }, 500);
+            }
+        };
+        optDiv.appendChild(btn);
+    });
+    
+    blockDiv.appendChild(optDiv);
+    container.appendChild(blockDiv);
+});
+
+function triggerReward(event) {
+    correctSound.currentTime = 0;
+    correctSound.play().catch(e => console.log("Audio play failed:", e));
+
+    const rect = event.target.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+
+    for (let i = 0; i < 5; i++) {
+        let rewardEl = document.createElement("span");
+        rewardEl.className = "reward-pop";
+        rewardEl.innerText = rewards[Math.floor(Math.random() * rewards.length)];
+        
+        let randomX = centerX + (Math.random() * 60 - 30);
+        let randomY = centerY + (Math.random() * 20 - 10);
+        
+        rewardEl.style.left = randomX + "px";
+        rewardEl.style.top = randomY + "px";
+        
+        rewardEl.style.animationDuration = (0.8 + Math.random() * 0.5) + "s";
+        
+        document.body.appendChild(rewardEl);
+
+        setTimeout(() => {
+            rewardEl.remove();
+        }, 1500);
+    }
+}
+
+function updateProgress() {
+    let percent = (answered / questions.length) * 100;
+    document.getElementById("progressBar").style.width = percent + "%";
+}
+
+function finishQuiz() {
+    let resultDiv = document.getElementById("result");
+    resultDiv.style.display = "inline-block";
+    resultDiv.innerHTML = "🎉 నీ స్కోర్: " + score + " / " + questions.length;
+    resultDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    
+    submitBtn.style.display = "none";
+    startConfetti();
+}
+
+function startConfetti() {
+    const canvas = document.getElementById("confetti");
+    const ctx = canvas.getContext("2d");
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    
+    let pieces = [];
+    const colors = ['#f44336', '#e91e63', '#9c27b0', '#673ab7', '#3f51b5', '#2196f3', '#03a9f4', '#00bcd4', '#009688', '#4CAF50', '#8BC34A', '#CDDC39', '#FFEB3B', '#FFC107', '#FF9800', '#FF5722'];
+
+    for (let i = 0; i < 200; i++) {
+        pieces.push({
+            x: Math.random() * canvas.width,
+            y: Math.random() * canvas.height - canvas.height,
+            w: Math.random() * 10 + 5,
+            h: Math.random() * 5 + 2,
+            color: colors[Math.floor(Math.random() * colors.length)],
+            speedY: Math.random() * 3 + 2,
+            speedX: Math.random() * 2 - 1,
+            rotation: Math.random() * 360,
+            rotationSpeed: Math.random() * 10 - 5
+        });
+    }
+
+    let animationId;
+
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        let activePieces = 0;
+
+        pieces.forEach(p => {
+            if (p.y < canvas.height) {
+                activePieces++;
+                ctx.save();
+                ctx.translate(p.x, p.y);
+                ctx.rotate(p.rotation * Math.PI / 180);
+                ctx.fillStyle = p.color;
+                ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+                ctx.restore();
+
+                p.y += p.speedY;
+                p.x += p.speedX;
+                p.rotation += p.rotationSpeed;
+            }
+        });
+
+        if (activePieces > 0) {
+            animationId = requestAnimationFrame(draw);
+        } else {
+            cancelAnimationFrame(animationId);
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+    }
+    
+    draw();
+}
+</script>
+
+</body>
+</html>
