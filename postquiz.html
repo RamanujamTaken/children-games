@@ -404,7 +404,10 @@ function generateCertificate() {
     let dobText = "";
     if (dobInput) {
         const d = new Date(dobInput);
-        dobText = d.toLocaleDateString();
+        const day = String(d.getDate()).padStart(2, '0');
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const year = d.getFullYear();
+        dobText = day + "-" + month + "-" + year;
     }
 
     const canvas = document.createElement("canvas");
@@ -441,7 +444,7 @@ function generateCertificate() {
     // Body
     ctx.font = "24px Arial";
     ctx.fillStyle = "#333333";
-    ctx.fillText("This proudly presented to:", 400, 280);
+    ctx.fillText("This is proudly presented to : ", 400, 280);
 
     // Name
     ctx.font = "bold 45px Arial";
